@@ -112,6 +112,10 @@ class CfgFunctions {
             class setPlayTime {};
             class getPlayTime {};
         };
+        class Entreprise {
+            file = "\life_server\Functions\Entreprise";
+            class dbCompanyCreate {};
+        };
     };
 };
 
