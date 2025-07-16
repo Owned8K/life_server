@@ -43,15 +43,8 @@ if (typeName _playerResult != "ARRAY" || count _playerResult == 0) exitWith {
     ["Erreur: Format de données invalide"] remoteExecCall ["life_fnc_broadcast", _player];
 };
 
-private _firstRow = _playerResult select 0;
-diag_log format ["[ENTREPRISE] Première ligne: %1 (type: %2)", _firstRow, typeName _firstRow];
-
-if (typeName _firstRow != "ARRAY" || count _firstRow == 0) exitWith {
-    diag_log format ["[ENTREPRISE] ERREUR: Format de ligne invalide: %1", _firstRow];
-    ["Erreur: Format de ligne invalide"] remoteExecCall ["life_fnc_broadcast", _player];
-};
-
-private _playerBank = _firstRow select 0;
+// Le résultat est un array simple avec le montant directement
+private _playerBank = _playerResult select 0;
 diag_log format ["[ENTREPRISE] Argent récupéré depuis BDD: %1 (type: %2)", _playerBank, typeName _playerBank];
 
 // Conversion en nombre si nécessaire
