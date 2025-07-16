@@ -28,13 +28,37 @@ diag_log format ["[ENTREPRISE] Joueur identifié: %1 (UID: %2)", _playerName, _u
 private _playerQuery = format ["SELECT bankacc FROM players WHERE pid='%1'", _uid];
 private _playerResult = [_playerQuery, 2] call DB_fnc_asyncCall;
 
+diag_log format ["[ENTREPRISE] Résultat requête SQL: %1", _playerResult];
+diag_log format ["[ENTREPRISE] Type du résultat: %1", typeName _playerResult];
+diag_log format ["[ENTREPRISE] Taille du résultat: %1", count _playerResult];
+
 if (count _playerResult == 0) exitWith {
     diag_log format ["[ENTREPRISE] ERREUR: Joueur %1 non trouvé en base", _uid];
     ["Erreur: Joueur non trouvé en base de données"] remoteExecCall ["life_fnc_broadcast", _player];
 };
 
-private _playerBank = (_playerResult select 0) select 0;
-diag_log format ["[ENTREPRISE] Argent récupéré depuis BDD: %1", _playerBank];
+// Vérification du format avant d'accéder aux données
+if (typeName _playerResult != "ARRAY" || count _playerResult == 0) exitWith {
+    diag_log format ["[ENTREPRISE] ERREUR: Format de résultat invalide: %1", _playerResult];
+    ["Erreur: Format de données invalide"] remoteExecCall ["life_fnc_broadcast", _player];
+};
+
+private _firstRow = _playerResult select 0;
+diag_log format ["[ENTREPRISE] Première ligne: %1 (type: %2)", _firstRow, typeName _firstRow];
+
+if (typeName _firstRow != "ARRAY" || count _firstRow == 0) exitWith {
+    diag_log format ["[ENTREPRISE] ERREUR: Format de ligne invalide: %1", _firstRow];
+    ["Erreur: Format de ligne invalide"] remoteExecCall ["life_fnc_broadcast", _player];
+};
+
+private _playerBank = _firstRow select 0;
+diag_log format ["[ENTREPRISE] Argent récupéré depuis BDD: %1 (type: %2)", _playerBank, typeName _playerBank];
+
+// Conversion en nombre si nécessaire
+if (typeName _playerBank == "STRING") then {
+    _playerBank = parseNumber _playerBank;
+    diag_log format ["[ENTREPRISE] Argent après conversion: %1", _playerBank];
+};
 
 // --- Validation Côté Serveur (sécurité) ---
 private _price = M_CONFIG(getNumber, "CfgCompanies", _companyClass, "price");
