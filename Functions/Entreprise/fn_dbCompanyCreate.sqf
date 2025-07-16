@@ -32,10 +32,22 @@ private _licenseName = format["license_civ_%1", _licenseVar];
 diag_log format ["[ENTREPRISE] Configuration entreprise: prix=%1, licence=%2, variable=%3", _price, _licenseVar, _licenseName];
 
 private _playerBank = _player getVariable ["life_atmbank", 0];
-diag_log format ["[ENTREPRISE] Argent joueur: %1 (requis: %2)", _playerBank, _price];
+diag_log format ["[ENTREPRISE] Argent joueur (getVariable): %1 (requis: %2)", _playerBank, _price];
 
-if (_playerBank < _price) exitWith {
-    diag_log format ["[ENTREPRISE] ECHEC: Pas assez d'argent (%1 < %2)", _playerBank, _price];
+// Essayons aussi de récupérer directement la variable du joueur
+private _playerBankDirect = 0;
+if (!isNull _player) then {
+    _playerBankDirect = (_player getVariable "life_atmbank");
+    if (isNil "_playerBankDirect") then { _playerBankDirect = 0; };
+};
+diag_log format ["[ENTREPRISE] Argent joueur (direct): %1", _playerBankDirect];
+
+// Utilisons la valeur directe si elle est disponible
+private _currentPlayerBank = if (_playerBankDirect > 0) then { _playerBankDirect } else { _playerBank };
+diag_log format ["[ENTREPRISE] Argent final utilisé: %1", _currentPlayerBank];
+
+if (_currentPlayerBank < _price) exitWith {
+    diag_log format ["[ENTREPRISE] ECHEC: Pas assez d'argent (%1 < %2)", _currentPlayerBank, _price];
     ["STR_NOTF_NotEnoughMoney_2"] remoteExecCall ["life_fnc_broadcast", _player];
 };
 
@@ -69,7 +81,7 @@ if (count _queryResult > 0) exitWith {
 // --- Exécution de l'Achat ---
 diag_log "[ENTREPRISE] Début de l'exécution de l'achat";
 
-_currentBank = _player getVariable ["life_atmbank", 0];
+_currentBank = _currentPlayerBank;
 _player setVariable ["life_atmbank", (_currentBank - _price), true];
 _player setVariable [_licenseName, true, true];
 
