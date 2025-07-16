@@ -24,30 +24,28 @@ private _uid = getPlayerUID _player;
 private _playerName = name _player;
 diag_log format ["[ENTREPRISE] Joueur identifié: %1 (UID: %2)", _playerName, _uid];
 
+// --- Récupération de l'argent depuis la base de données ---
+private _playerQuery = format ["SELECT bankacc FROM players WHERE pid='%1'", _uid];
+private _playerResult = [_playerQuery, 2] call DB_fnc_asyncCall;
+
+if (count _playerResult == 0) exitWith {
+    diag_log format ["[ENTREPRISE] ERREUR: Joueur %1 non trouvé en base", _uid];
+    ["Erreur: Joueur non trouvé en base de données"] remoteExecCall ["life_fnc_broadcast", _player];
+};
+
+private _playerBank = (_playerResult select 0) select 0;
+diag_log format ["[ENTREPRISE] Argent récupéré depuis BDD: %1", _playerBank];
+
 // --- Validation Côté Serveur (sécurité) ---
 private _price = M_CONFIG(getNumber, "CfgCompanies", _companyClass, "price");
 private _licenseVar = M_CONFIG(getText, "CfgCompanies", _companyClass, "license");
 private _licenseName = format["license_civ_%1", _licenseVar];
 
 diag_log format ["[ENTREPRISE] Configuration entreprise: prix=%1, licence=%2, variable=%3", _price, _licenseVar, _licenseName];
+diag_log format ["[ENTREPRISE] Argent joueur: %1 (requis: %2)", _playerBank, _price];
 
-private _playerBank = _player getVariable ["life_atmbank", 0];
-diag_log format ["[ENTREPRISE] Argent joueur (getVariable): %1 (requis: %2)", _playerBank, _price];
-
-// Essayons aussi de récupérer directement la variable du joueur
-private _playerBankDirect = 0;
-if (!isNull _player) then {
-    _playerBankDirect = (_player getVariable "life_atmbank");
-    if (isNil "_playerBankDirect") then { _playerBankDirect = 0; };
-};
-diag_log format ["[ENTREPRISE] Argent joueur (direct): %1", _playerBankDirect];
-
-// Utilisons la valeur directe si elle est disponible
-private _currentPlayerBank = if (_playerBankDirect > 0) then { _playerBankDirect } else { _playerBank };
-diag_log format ["[ENTREPRISE] Argent final utilisé: %1", _currentPlayerBank];
-
-if (_currentPlayerBank < _price) exitWith {
-    diag_log format ["[ENTREPRISE] ECHEC: Pas assez d'argent (%1 < %2)", _currentPlayerBank, _price];
+if (_playerBank < _price) exitWith {
+    diag_log format ["[ENTREPRISE] ECHEC: Pas assez d'argent (%1 < %2)", _playerBank, _price];
     ["STR_NOTF_NotEnoughMoney_2"] remoteExecCall ["life_fnc_broadcast", _player];
 };
 
@@ -81,7 +79,7 @@ if (count _queryResult > 0) exitWith {
 // --- Exécution de l'Achat ---
 diag_log "[ENTREPRISE] Début de l'exécution de l'achat";
 
-_currentBank = _currentPlayerBank;
+_currentBank = _playerBank;
 _player setVariable ["life_atmbank", (_currentBank - _price), true];
 _player setVariable [_licenseName, true, true];
 
@@ -98,11 +96,12 @@ if (EXTDB_SETTING(getNumber,"DebugMode") isEqualTo 1) then {
     diag_log format ["Company insert query: %1", _query];
 };
 
-// Synchronisation côté client
-[_player, "life_atmbank", (_currentBank - _price)] remoteExecCall ["life_fnc_setVariable", _player];
-diag_log format ["[ENTREPRISE] Synchronisation argent côté client: %1", (_currentBank - _price)];
+// Mise à jour de l'argent en base de données
+[_uid, civilian, (_currentBank - _price), 1] call DB_fnc_updatePartial;
+diag_log format ["[ENTREPRISE] Mise à jour argent en BDD: %1", (_currentBank - _price)];
 
+// Notification de succès et synchronisation côté client
 _successMsg = format[localize "STR_CompanyCreate_Success", _companyName];
-[_successMsg] remoteExecCall ["life_fnc_broadcast", _player];
+[_successMsg, (_currentBank - _price)] remoteExecCall ["life_fnc_companyCreated", _player];
 
 diag_log format ["[ENTREPRISE] SUCCES: Entreprise '%1' créée pour %2", _companyName, _playerName]; 
