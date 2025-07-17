@@ -51,9 +51,6 @@ _queryResult set[7,([_queryResult select 7] call DB_fnc_bool)];
 //Parse gear (Always index 8)
 _queryResult set[8,[_queryResult select 8] call DB_fnc_mresToArray];
 
-//Session ID
-_queryResult pushBack getPlayerUID _ownerID;
-
 // Si c'est un civil, on vérifie s'il a une entreprise
 if (_side isEqualTo civilian) then {
     private _companyQuery = format ["SELECT id, name, bank FROM companies WHERE owner_uid='%1' LIMIT 1", _uid];
