@@ -20,11 +20,9 @@ if (isNull _ownerID) exitWith {};
 _ownerID = owner _ownerID;
 
 _query = switch (_side) do {
-    case west: {format ["SELECT playerid, name, cash, bankacc, adminlevel, donorlevel, cop_licenses, coplevel, cop_gear, blacklist FROM players WHERE playerid='%1'",_uid];};
-    case civilian: {
-        format ["SELECT players.playerid, name, cash, bankacc, adminlevel, donorlevel, civ_licenses, arrested, civ_gear, companies.id as company_id, companies.name as company_name, companies.bank as company_bank FROM players LEFT JOIN companies ON players.playerid=companies.owner_uid WHERE players.playerid='%1'",_uid];
-    };
-    case independent: {format ["SELECT playerid, name, cash, bankacc, adminlevel, donorlevel, med_licenses, mediclevel, med_gear FROM players WHERE playerid='%1'",_uid];};
+    case west: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, cop_licenses, coplevel, cop_gear, blacklist FROM players WHERE pid='%1'",_uid];};
+    case civilian: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, civ_licenses, arrested, civ_gear FROM players WHERE pid='%1'",_uid];};
+    case independent: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, med_licenses, mediclevel, med_gear FROM players WHERE pid='%1'",_uid];};
 };
 
 _tickTime = diag_tickTime;
@@ -56,14 +54,14 @@ _queryResult set[8,[_queryResult select 8] call DB_fnc_mresToArray];
 //Session ID
 _queryResult pushBack getPlayerUID _ownerID;
 
+// Si c'est un civil, on vérifie s'il a une entreprise
 if (_side isEqualTo civilian) then {
+    private _companyQuery = format ["SELECT id, name, bank FROM companies WHERE owner_uid='%1' LIMIT 1", _uid];
+    private _companyResult = [_companyQuery,2] call DB_fnc_asyncCall;
+    
     private _company = [];
-    if (!isNil {_queryResult select 9}) then {
-        _company = [
-            _queryResult select 9,  // ID
-            _queryResult select 10, // Name
-            _queryResult select 11  // Bank
-        ];
+    if (!(_companyResult isEqualTo [])) then {
+        _company = _companyResult;
         diag_log format ["[QUERY REQUEST] Found company for %1: %2", _uid, _company];
     };
     _queryResult pushBack _company;
