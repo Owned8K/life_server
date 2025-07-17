@@ -19,6 +19,8 @@ _ownerID = [_this,2,objNull,[objNull]] call BIS_fnc_param;
 if (isNull _ownerID) exitWith {};
 _ownerID = owner _ownerID;
 
+diag_log format ["[QUERY REQUEST] Starting query for player UID: %1, Side: %2", _uid, _side];
+
 _query = switch (_side) do {
     case west: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, cop_licenses, coplevel, cop_gear, blacklist FROM players WHERE pid='%1'",_uid];};
     case civilian: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, civ_licenses, arrested, civ_gear FROM players WHERE pid='%1'",_uid];};
@@ -28,11 +30,15 @@ _query = switch (_side) do {
 _tickTime = diag_tickTime;
 _queryResult = [_query,2] call DB_fnc_asyncCall;
 
+diag_log format ["[QUERY REQUEST] Initial query result: %1", _queryResult];
+
 if (_queryResult isEqualType "") exitWith {
+    diag_log "[QUERY REQUEST] Error: Query returned string instead of array";
     [] remoteExecCall ["SOCK_fnc_insertPlayerInfo",_ownerID];
 };
 
 if (_queryResult isEqualTo []) exitWith {
+    diag_log "[QUERY REQUEST] Error: Empty query result";
     [] remoteExecCall ["SOCK_fnc_insertPlayerInfo",_ownerID];
 };
 
@@ -64,4 +70,5 @@ if (_side isEqualTo civilian) then {
     _queryResult pushBack _company;
 };
 
+diag_log format ["[QUERY REQUEST] Final data to send: %1", _queryResult];
 [_queryResult] remoteExecCall ["SOCK_fnc_requestReceived", _ownerID];
