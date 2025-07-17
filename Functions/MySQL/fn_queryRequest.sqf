@@ -64,4 +64,4 @@ if (_side isEqualTo civilian) then {
     _queryResult pushBack _company;
 };
 
-[_queryResult,"SOCK_fnc_requestReceived",_ownerID,false] call life_fnc_MP;
+[_queryResult] remoteExecCall ["SOCK_fnc_requestReceived", _ownerID];
