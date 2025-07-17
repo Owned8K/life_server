@@ -1,4 +1,6 @@
 class DefaultEventhandlers;
+diag_log "=== LOADING LIFE SERVER CONFIG ===";
+
 class CfgPatches {
     class life_server {
         units[] = {"C_man_1"};
@@ -79,6 +81,13 @@ class CfgFunctions {
             class terrainSort {};
         };
 
+        class Entreprise {
+            file = "\life_server\Functions\Entreprise";
+            class dbCompanyCreate {};
+            class fetchCompanyData {};
+            class checkCompanyOwner {};
+        };
+
         class Housing {
             file = "\life_server\Functions\Housing";
             class addHouse {};
@@ -111,12 +120,6 @@ class CfgFunctions {
             file = "\life_server\Functions\PlayTime";
             class setPlayTime {};
             class getPlayTime {};
-        };
-        class Entreprise {
-            file = "\life_server\Functions\Entreprise";
-            class dbCompanyCreate {};
-            class fetchCompanyData {};
-            class checkCompanyOwner {};
         };
     };
 };
