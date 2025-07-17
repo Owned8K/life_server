@@ -116,6 +116,7 @@ class CfgFunctions {
             file = "\life_server\Functions\Entreprise";
             class dbCompanyCreate {};
             class fetchCompanyData {};
+            class checkCompanyOwner {};
         };
     };
 };
