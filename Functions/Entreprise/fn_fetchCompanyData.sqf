@@ -18,7 +18,16 @@ private _queryResult = [_query,2] call DB_fnc_asyncCall;
 diag_log format ["[COMPANY FETCH] Query result: %1", _queryResult];
 
 if (_queryResult isEqualTo []) then {
-    [[], _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
+    [[0, "", "", "", 0], _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
 } else {
-    [_queryResult, _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
+    _queryResult params [
+        ["_id", 0, [0]],
+        ["_name", "", [""]],
+        ["_ownerName", "", [""]],
+        ["_ownerUID", "", [""]],
+        ["_bank", 0, [0]]
+    ];
+    
+    private _formattedData = [_id, _name, _ownerName, _ownerUID, _bank];
+    [_formattedData, _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
 }; 
