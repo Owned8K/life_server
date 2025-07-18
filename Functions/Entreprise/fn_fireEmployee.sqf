@@ -1,54 +1,40 @@
 #include "\life_server\script_macros.hpp"
 /*
     File: fn_fireEmployee.sqf
-    Author: Gemini
-    Description: Retire un employé d'une entreprise
+    Author: Your Name
+    
+    Description:
+    Supprime un employé de la table company_employees
 */
 
 params [
-    ["_owner", objNull, [objNull]],
-    ["_employeeUID", "", [""]]
+    ["_companyId", 0, [0]],
+    ["_employeeUID", "", [""]],
+    ["_owner", objNull, [objNull]]
 ];
 
-if (isNull _owner || _employeeUID isEqualTo "") exitWith {};
-
-private _ownerUID = getPlayerUID _owner;
-
-// Vérifier que le joueur est bien propriétaire
-private _query = format ["SELECT id FROM companies WHERE owner_uid='%1' LIMIT 1", _ownerUID];
-private _queryResult = [_query,2] call DB_fnc_asyncCall;
-
-if (_queryResult isEqualTo []) exitWith {
-    [1, "STR_Company_NotOwner"] remoteExecCall ["life_fnc_broadcast", _owner];
+if (_companyId isEqualTo 0 || _employeeUID isEqualTo "" || isNull _owner) exitWith {
+    diag_log "FIRE_EMPLOYEE: Paramètres invalides";
 };
 
-private _companyId = _queryResult select 0;
+// Supprimer l'employé de la base de données
+private _query = format ["DELETE FROM company_employees WHERE company_id='%1' AND player_uid='%2'", _companyId, _employeeUID];
+[_query, 1] call DB_fnc_asyncCall;
 
-// Récupérer les infos de l'employé
-_query = format ["SELECT employee_name FROM company_employees WHERE company_id=%1 AND employee_uid='%2'", _companyId, _employeeUID];
-_queryResult = [_query,2] call DB_fnc_asyncCall;
+// Notifier le propriétaire
+[1, "L'employé a été licencié avec succès."] remoteExecCall ["life_fnc_broadcast", owner _owner];
 
-if (_queryResult isEqualTo []) exitWith {
-    [1, "STR_Company_NotEmployee"] remoteExecCall ["life_fnc_broadcast", _owner];
-};
-
-private _employeeName = _queryResult select 0;
-
-// Supprimer l'employé
-_query = format ["DELETE FROM company_employees WHERE company_id=%1 AND employee_uid='%2'", _companyId, _employeeUID];
-_queryResult = [_query,1] call DB_fnc_asyncCall;
-
-if (_queryResult) then {
-    // Rafraîchir les données pour tous les joueurs concernés
-    [_owner] call TON_fnc_fetchCompanyData;
-    
-    // Notifier le propriétaire et l'employé
-    [1, format [localize "STR_Company_Fired_Success", _employeeName]] remoteExecCall ["life_fnc_broadcast", _owner];
-    
-    private _employee = [_employeeUID] call TON_fnc_getPlayerObj;
-    if !(isNull _employee) then {
-        [1, format [localize "STR_Company_Fired_Notice", name _owner]] remoteExecCall ["life_fnc_broadcast", _employee];
+// Trouver le joueur licencié et le notifier
+private _employee = objNull;
+{
+    if (getPlayerUID _x isEqualTo _employeeUID) exitWith {
+        _employee = _x;
     };
-} else {
-    [1, "STR_Company_Fired_Failed"] remoteExecCall ["life_fnc_broadcast", _owner];
-}; 
+} forEach playableUnits;
+
+if !(isNull _employee) then {
+    [1, format ["Vous avez été licencié par %1", name _owner]] remoteExecCall ["life_fnc_broadcast", owner _employee];
+};
+
+// Mettre à jour la liste des employés pour le propriétaire
+[] remoteExec ["life_fnc_updateEmployeeCombo", owner _owner]; 
