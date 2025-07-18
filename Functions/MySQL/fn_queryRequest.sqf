@@ -23,7 +23,7 @@ diag_log format ["[QUERY REQUEST] Starting query for player UID: %1, Side: %2", 
 
 _query = switch (_side) do {
     case west: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, cop_licenses, coplevel, cop_gear, blacklist FROM players WHERE pid='%1'",_uid];};
-    case civilian: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, civ_licenses, arrested, civ_gear FROM players WHERE pid='%1'",_uid];};
+    case civilian: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, civ_licenses, arrested, civ_gear, civ_position FROM players WHERE pid='%1'",_uid];};
     case independent: {format ["SELECT pid, name, cash, bankacc, adminlevel, donorlevel, med_licenses, mediclevel, med_gear FROM players WHERE pid='%1'",_uid];};
 };
 
@@ -56,6 +56,17 @@ _queryResult set[7,([_queryResult select 7] call DB_fnc_bool)];
 
 //Parse gear (Always index 8)
 _queryResult set[8,[_queryResult select 8] call DB_fnc_mresToArray];
+
+//Parse position for civilian (index 9)
+if (_side isEqualTo civilian) then {
+    if (count _queryResult > 9) then {
+        private _pos = _queryResult select 9;
+        if (_pos isEqualType "") then {
+            _queryResult set[9, _pos];
+            diag_log format ["[QUERY REQUEST] Loaded position: %1", _pos];
+        };
+    };
+};
 
 // Si c'est un civil, on vérifie s'il a une entreprise
 if (_side isEqualTo civilian) then {
