@@ -16,59 +16,43 @@ if (isNull _player) exitWith {
 private _uid = getPlayerUID _player;
 diag_log format ["[COMPANY FETCH] Fetching data for player UID: %1", _uid];
 
-// D'abord, vérifions si le joueur est lié à une entreprise (propriétaire ou employé)
-private _checkQuery = format ["SELECT company_id, role FROM company_employees WHERE player_uid='%1' LIMIT 1", _uid];
-diag_log format ["[COMPANY FETCH] Check query: %1", _checkQuery];
-private _checkResult = [_checkQuery,2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY FETCH] Check result: %1", _checkResult];
-
-if (_checkResult isEqualTo []) exitWith {
-    diag_log "[COMPANY FETCH] No company association found";
-    [[0, "", "", "", 0, []], _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
-};
-
-_checkResult params [
-    ["_companyId", 0, [0]],
-    ["_playerRole", "", [""]]
-];
-
-// Maintenant, récupérons les informations de l'entreprise
-private _query = format ["SELECT c.id, c.name, c.bank FROM companies c WHERE c.id=%1", _companyId];
-diag_log format ["[COMPANY FETCH] Company query: %1", _query];
-private _companyResult = [_query,2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY FETCH] Company result: %1", _companyResult];
-
-if (_companyResult isEqualTo []) exitWith {
-    diag_log "[COMPANY FETCH] Company not found";
-    [[0, "", "", "", 0, []], _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
-};
-
-_companyResult params [
-    ["_companyId", 0, [0]],
-    ["_companyName", "", [""]],
-    ["_companyBank", 0, [0]]
-];
-
-// Récupérer les informations du propriétaire
-private _ownerQuery = format ["SELECT player_uid, player_name FROM company_employees WHERE company_id=%1 AND role='owner' LIMIT 1", _companyId];
+// Vérifier si le joueur est propriétaire d'une entreprise
+private _ownerQuery = format ["SELECT id, name, owner_name, owner_uid, bank FROM companies WHERE owner_uid = '%1'", _uid];
 diag_log format ["[COMPANY FETCH] Owner query: %1", _ownerQuery];
 private _ownerResult = [_ownerQuery,2] call DB_fnc_asyncCall;
 diag_log format ["[COMPANY FETCH] Owner result: %1", _ownerResult];
 
-private _ownerUID = "";
-private _ownerName = "";
-if !(_ownerResult isEqualTo []) then {
-    _ownerResult params [
-        ["_tempOwnerUID", "", [""]],
-        ["_tempOwnerName", "", [""]]
-    ];
-    _ownerUID = _tempOwnerUID;
-    _ownerName = _tempOwnerName;
+// Si le joueur n'est pas propriétaire, vérifier s'il est employé
+if (_ownerResult isEqualTo []) then {
+    private _employeeQuery = format ["SELECT c.id, c.name, c.owner_name, c.owner_uid, c.bank 
+        FROM companies c 
+        INNER JOIN company_employees ce ON c.id = ce.company_id 
+        WHERE ce.player_uid = '%1'", _uid];
+    
+    diag_log format ["[COMPANY FETCH] Employee query: %1", _employeeQuery];
+    _ownerResult = [_employeeQuery,2] call DB_fnc_asyncCall;
+    diag_log format ["[COMPANY FETCH] Employee result: %1", _ownerResult];
 };
 
+if (_ownerResult isEqualTo []) exitWith {
+    diag_log "[COMPANY FETCH] No company found";
+    [[0, "", "", "", 0, []], _player] remoteExecCall ["life_fnc_companyDataReceived", _player];
+};
+
+_ownerResult params [
+    ["_companyId", 0, [0]],
+    ["_companyName", "", [""]],
+    ["_ownerName", "", [""]],
+    ["_ownerUID", "", [""]],
+    ["_companyBank", 0, [0]]
+];
+
+diag_log format ["[COMPANY FETCH] Found company - ID: %1, Name: %2, Owner: %3, Bank: %4", 
+    _companyId, _companyName, _ownerName, _companyBank];
+
 // Récupérer la liste des employés
-private _employeeQuery = format ["SELECT player_uid, player_name, role FROM company_employees WHERE company_id=%1", _companyId];
-diag_log format ["[COMPANY FETCH] Employee query: %1", _employeeQuery];
+private _employeeQuery = format ["SELECT player_uid, player_name, role FROM company_employees WHERE company_id = %1", _companyId];
+diag_log format ["[COMPANY FETCH] Employees query: %1", _employeeQuery];
 private _employees = [_employeeQuery,2] call DB_fnc_asyncCall;
 diag_log format ["[COMPANY FETCH] Employees result: %1", _employees];
 
@@ -81,10 +65,11 @@ private _formattedEmployees = [];
         ["_empRole", "", [""]]
     ];
     
-    // On considère que les employés normaux ont un salaire de 0 pour l'instant
     _formattedEmployees pushBack [_empUID, _empName, 0];
+    diag_log format ["[COMPANY FETCH] Added employee - UID: %1, Name: %2, Role: %3", 
+        _empUID, _empName, _empRole];
 } forEach _employees;
 
 private _formattedData = [_companyId, _companyName, _ownerName, _ownerUID, _companyBank, _formattedEmployees];
-diag_log format ["[COMPANY FETCH] Sending formatted data: %1", _formattedData];
+diag_log format ["[COMPANY FETCH] Final formatted data: %1", _formattedData];
 [_formattedData, _player] remoteExecCall ["life_fnc_companyDataReceived", _player]; 
