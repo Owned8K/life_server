@@ -86,6 +86,9 @@ class CfgFunctions {
             class fetchCompanyData {};
             class checkCompanyOwner {};
             class fetchCompanyEmployees {};
+            class hireEmployee {};
+            class fireEmployee {};
+            class setEmployeeSalary {};
         };
 
         class Housing {
