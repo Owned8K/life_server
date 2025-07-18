@@ -1,53 +1,60 @@
 #include "\life_server\script_macros.hpp"
 /*
     File: fn_hireEmployee.sqf
-    Author: Gemini
-    Description: Ajoute un employé à une entreprise
+    Author: Your Name
+    
+    Description:
+    Gère l'embauche d'un employé dans une entreprise
 */
 
 params [
-    ["_owner", objNull, [objNull]],
-    ["_employeeUID", "", [""]],
-    ["_employeeName", "", [""]]
+    ["_companyId", 0, [0]],
+    ["_playerUID", "", [""]],
+    ["_playerName", "", [""]],
+    ["_owner", objNull, [objNull]]
 ];
 
-if (isNull _owner || _employeeUID isEqualTo "" || _employeeName isEqualTo "") exitWith {};
+if (_companyId isEqualTo 0 || _playerUID isEqualTo "" || _playerName isEqualTo "" || isNull _owner) exitWith {
+    diag_log "HIRE_EMPLOYEE: Paramètres invalides";
+};
 
 private _ownerUID = getPlayerUID _owner;
 
-// Vérifier que le joueur est bien propriétaire
-private _query = format ["SELECT id FROM companies WHERE owner_uid='%1' LIMIT 1", _ownerUID];
-private _queryResult = [_query,2] call DB_fnc_asyncCall;
+// Vérifier si le joueur est déjà employé
+private _query = format ["SELECT COUNT(*) FROM company_employees WHERE player_uid='%1'", _playerUID];
+private _result = [_query, 2] call DB_fnc_asyncCall;
 
-if (_queryResult isEqualTo []) exitWith {
-    [1, "STR_Company_NotOwner"] remoteExecCall ["life_fnc_broadcast", _owner];
-};
-
-private _companyId = _queryResult select 0;
-
-// Vérifier si l'employé n'est pas déjà dans l'entreprise
-_query = format ["SELECT id FROM company_employees WHERE company_id=%1 AND employee_uid='%2'", _companyId, _employeeUID];
-_queryResult = [_query,2] call DB_fnc_asyncCall;
-
-if !(_queryResult isEqualTo []) exitWith {
-    [1, "STR_Company_AlreadyEmployee"] remoteExecCall ["life_fnc_broadcast", _owner];
-};
-
-// Ajouter l'employé
-_query = format ["INSERT INTO company_employees (company_id, employee_uid, employee_name, salary) VALUES (%1, '%2', '%3', 0)", _companyId, _employeeUID, _employeeName];
-_queryResult = [_query,1] call DB_fnc_asyncCall;
-
-if (_queryResult) then {
-    // Rafraîchir les données pour tous les joueurs concernés
-    [_owner] call TON_fnc_fetchCompanyData;
-    
-    // Notifier le propriétaire et l'employé
-    [1, format [localize "STR_Company_Hired_Success", _employeeName]] remoteExecCall ["life_fnc_broadcast", _owner];
-    
-    private _employee = [_employeeUID] call TON_fnc_getPlayerObj;
-    if !(isNull _employee) then {
-        [1, format [localize "STR_Company_Hired_Notice", name _owner]] remoteExecCall ["life_fnc_broadcast", _employee];
+if (_result isEqualType [] && {count _result > 0}) then {
+    if ((_result select 0) > 0) exitWith {
+        [1, "Ce joueur est déjà employé dans une entreprise."] remoteExecCall ["life_fnc_broadcast", owner _owner];
     };
+    
+    // Insérer le nouvel employé
+    _query = format ["INSERT INTO company_employees (company_id, player_uid, player_name, role) VALUES ('%1', '%2', '%3', 'employee')",
+        _companyId,
+        _playerUID,
+        _playerName
+    ];
+    [_query, 1] call DB_fnc_asyncCall;
+    
+    // Notifier le propriétaire
+    [1, format ["Vous avez embauché %1 avec succès!", _playerName]] remoteExecCall ["life_fnc_broadcast", owner _owner];
+    
+    // Trouver le joueur embauché et le notifier
+    private _player = objNull;
+    {
+        if (getPlayerUID _x isEqualTo _playerUID) exitWith {
+            _player = _x;
+        };
+    } forEach playableUnits;
+    
+    if !(isNull _player) then {
+        [1, format ["Vous avez été embauché par %1!", name _owner]] remoteExecCall ["life_fnc_broadcast", owner _player];
+    };
+    
+    // Mettre à jour la liste des employés
+    [] remoteExec ["life_fnc_updateEmployeeList", owner _owner];
 } else {
-    [1, "STR_Company_Hired_Failed"] remoteExecCall ["life_fnc_broadcast", _owner];
+    diag_log "HIRE_EMPLOYEE: Erreur lors de la vérification de l'employé";
+    [1, "Une erreur s'est produite lors de l'embauche."] remoteExecCall ["life_fnc_broadcast", owner _owner];
 }; 
