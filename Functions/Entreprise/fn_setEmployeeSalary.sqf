@@ -29,7 +29,8 @@ if (_companyResult isEqualTo []) exitWith {
     [1, "Erreur: Entreprise non trouvée"] remoteExecCall ["life_fnc_broadcast", owner _owner];
 };
 
-private _companyBank = [(_companyResult select 0)] call DB_fnc_numberSafe;
+// Convertir le solde en nombre
+private _companyBank = parseNumber ((_companyResult select 0));
 diag_log format ["[COMPANY] Company bank balance: $%1", _companyBank];
 
 if (_companyBank < _salary) exitWith {
@@ -49,20 +50,31 @@ if (_playerResult isEqualTo []) exitWith {
 };
 
 private _employeeName = _playerResult select 0;
-private _employeeBank = [(_playerResult select 1)] call DB_fnc_numberSafe;
+private _employeeBank = parseNumber ((_playerResult select 1));
 
 diag_log format ["[COMPANY] Employee found: %1, Current bank: $%2", _employeeName, _employeeBank];
+
+// Trouver l'employé
+private _employee = objNull;
+{
+    if (getPlayerUID _x isEqualTo _employeeUID) exitWith {
+        _employee = _x;
+    };
+} forEach playableUnits;
+
+// Vérifier si l'employé est en ligne
+if (isNull _employee) exitWith {
+    diag_log "[COMPANY] Employee not online";
+    [1, "L'employé doit être en ligne pour recevoir son salaire"] remoteExecCall ["life_fnc_broadcast", owner _owner];
+};
+
+// Effectuer le transfert d'argent
+[_owner, _employee, _salary, "Salaire d'entreprise"] remoteExecCall ["TON_fnc_wireTransfer", RSERV];
 
 // Mettre à jour le compte de l'entreprise
 private _newCompanyBank = _companyBank - _salary;
 _query = format ["UPDATE companies SET bank='%1' WHERE id='%2'", [_newCompanyBank] call DB_fnc_numberSafe, _companyId];
 diag_log format ["[COMPANY] Update company bank query: %1", _query];
-[_query, 1] call DB_fnc_asyncCall;
-
-// Mettre à jour le compte de l'employé
-private _newEmployeeBank = _employeeBank + _salary;
-_query = format ["UPDATE players SET bankacc='%1' WHERE pid='%2'", [_newEmployeeBank] call DB_fnc_numberSafe, _employeeUID];
-diag_log format ["[COMPANY] Update player bank query: %1", _query];
 [_query, 1] call DB_fnc_asyncCall;
 
 // Convertir le salaire en chaîne pour le stocker dans le champ 'role'
@@ -83,24 +95,14 @@ diag_log format ["[COMPANY] Payment history query: %1", _query];
 // Notifier le propriétaire
 [1, format ["Salaire de $%1 versé à %2", [_salary] call life_fnc_numberText, _employeeName]] remoteExecCall ["life_fnc_broadcast", owner _owner];
 
-// Trouver l'employé et le notifier
-private _employee = objNull;
-{
-    if (getPlayerUID _x isEqualTo _employeeUID) exitWith {
-        _employee = _x;
-    };
-} forEach playableUnits;
-
-if !(isNull _employee) then {
-    [1, format ["Vous avez reçu votre salaire de $%1", [_salary] call life_fnc_numberText]] remoteExecCall ["life_fnc_broadcast", owner _employee];
-    
-    // Mettre à jour l'argent de l'employé
-    [1, _salary] remoteExecCall ["life_fnc_bankAdd", owner _employee];
-};
+// Notifier l'employé
+[1, format ["Vous avez reçu votre salaire de $%1", [_salary] call life_fnc_numberText]] remoteExecCall ["life_fnc_broadcast", owner _employee];
 
 // Forcer la mise à jour des données de l'entreprise
 [_owner] call TON_fnc_fetchCompanyData;
 
 // Mettre à jour les listes
-[] remoteExec ["life_fnc_updateEmployeeCombo", owner _owner];
-[] remoteExec ["life_fnc_updatePaymentHistory", owner _owner]; 
+[] remoteExecCall ["life_fnc_updateEmployeeCombo", owner _owner];
+[] remoteExecCall ["life_fnc_updatePaymentHistory", owner _owner];
+
+diag_log format ["[COMPANY] Salary payment completed - Amount: $%1, From: Company %2, To: %3", _salary, _companyId, _employeeName]; 
