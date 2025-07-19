@@ -37,17 +37,28 @@ if (_count > 0) then {
     private _query = format ["SELECT player_uid, player_name, amount, payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
     diag_log format ["[COMPANY] Executing query: %1", _query];
 
-    private _queryResult = [_query,2] call DB_fnc_asyncCall;
-    diag_log format ["[COMPANY] Query result: %1", _queryResult];
+    private _queryResult = [_query,2,true] call DB_fnc_asyncCall;
+    diag_log format ["[COMPANY] Raw query result: %1", _queryResult];
 
     if (_queryResult isEqualTo []) then {
         diag_log "[COMPANY] No payment history found";
         _queryResult = [];
     } else {
+        // Si on reçoit un seul résultat, on le met dans un tableau
+        if ((_queryResult select 0) isEqualType "") then {
+            _queryResult = [_queryResult];
+        };
+
         diag_log format ["[COMPANY] Found %1 payments", count _queryResult];
         {
+            private _payment = _x;
+            private _date = _payment select 3;
+            if (_date isEqualType []) then {
+                _date params ["_year", "_month", "_day", "_hour", "_min", "_sec"];
+                _payment set [3, format ["%1-%2-%3 %4:%5:%6", _year, _month, _day, _hour, _min, _sec]];
+            };
             diag_log format ["[COMPANY] Processing payment - Employee: %1 (%2), Amount: %3, Date: %4", 
-                _x select 1, _x select 0, _x select 2, _x select 3];
+                _payment select 1, _payment select 0, _payment select 2, _payment select 3];
         } forEach _queryResult;
     };
 
