@@ -16,9 +16,14 @@ if (_companyId isEqualTo 0 || isNull _owner) exitWith {
     diag_log "GET_EMPLOYEES: Paramètres invalides";
 };
 
+diag_log format ["[COMPANY] Getting employees for company ID: %1", _companyId];
+
 // Récupérer la liste des employés
 private _query = format ["SELECT player_uid, player_name, role FROM company_employees WHERE company_id='%1'", _companyId];
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 
+diag_log format ["[COMPANY] Found %1 employees", count _queryResult];
+diag_log format ["[COMPANY] Query result: %1", _queryResult];
+
 // Envoyer les résultats au client
-[_queryResult] remoteExec ["life_fnc_updateEmployeesList", owner _owner]; 
+[_queryResult] remoteExec ["life_fnc_updateEmployeeComboList", owner _owner]; 
