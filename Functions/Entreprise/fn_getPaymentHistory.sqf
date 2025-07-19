@@ -34,7 +34,7 @@ if (!(_countResult isEqualTo [])) then {
 };
 
 if (_count > 0) then {
-    private _query = format ["SELECT employee_uid, employee_name, amount, payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
+    private _query = format ["SELECT player_uid, player_name, amount, payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
     diag_log format ["[COMPANY] Executing query: %1", _query];
 
     private _queryResult = [_query,2] call DB_fnc_asyncCall;
