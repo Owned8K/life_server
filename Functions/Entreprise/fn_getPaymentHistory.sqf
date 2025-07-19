@@ -19,7 +19,7 @@ if (_companyId isEqualTo 0 || isNull _owner) exitWith {
 diag_log format ["[COMPANY] Getting payment history for company ID: %1", _companyId];
 
 // Récupérer l'historique des paiements (les 50 derniers paiements)
-private _query = format ["SELECT player_name, amount, payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
+private _query = format ["SELECT player_name, amount, DATE_FORMAT(payment_date, '%Y-%m-%d %H:%i') as formatted_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
 diag_log format ["[COMPANY] Payment query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
@@ -40,10 +40,8 @@ if (_queryResult isEqualTo []) then {
         ];
         
         if (_playerName != "" && _amount != 0) then {
-            // Formater la date manuellement
-            private _formattedDate = _paymentDate select [0, 16];
-            _formattedPayments pushBack [_playerName, _amount, _formattedDate];
-            diag_log format ["[COMPANY] Added payment - Name: %1, Amount: %2, Date: %3", _playerName, _amount, _formattedDate];
+            _formattedPayments pushBack [_playerName, _amount, _paymentDate];
+            diag_log format ["[COMPANY] Added payment - Name: %1, Amount: %2, Date: %3", _playerName, _amount, _paymentDate];
         };
     } forEach _queryResult;
 
