@@ -22,8 +22,14 @@ diag_log format ["[COMPANY] Setting salary for employee UID: %1 in company %2 to
 
 // Vérifier le solde de l'entreprise
 private _query = format ["SELECT bank FROM companies WHERE id='%1'", _companyId];
-private _companyBank = ([_query, 2] call DB_fnc_asyncCall) param [0, 0, [0]];
+private _companyResult = [_query, 2] call DB_fnc_asyncCall;
 
+if (_companyResult isEqualTo []) exitWith {
+    diag_log "[COMPANY] Company not found in database";
+    [1, "Erreur: Entreprise non trouvée"] remoteExecCall ["life_fnc_broadcast", owner _owner];
+};
+
+private _companyBank = [(_companyResult select 0)] call DB_fnc_numberSafe;
 diag_log format ["[COMPANY] Company bank balance: $%1", _companyBank];
 
 if (_companyBank < _salary) exitWith {
@@ -32,8 +38,10 @@ if (_companyBank < _salary) exitWith {
 };
 
 // Récupérer le nom et les données bancaires de l'employé
-_query = format ["SELECT player_name, bank FROM players WHERE playerid='%1'", _employeeUID];
+_query = format ["SELECT name, bankacc FROM players WHERE pid='%1'", _employeeUID];
+diag_log format ["[COMPANY] Player query: %1", _query];
 private _playerResult = [_query, 2] call DB_fnc_asyncCall;
+diag_log format ["[COMPANY] Player query result: %1", _playerResult];
 
 if (_playerResult isEqualTo []) exitWith {
     diag_log "[COMPANY] Employee not found in players database";
@@ -41,18 +49,20 @@ if (_playerResult isEqualTo []) exitWith {
 };
 
 private _employeeName = _playerResult select 0;
-private _employeeBank = _playerResult select 1;
+private _employeeBank = [(_playerResult select 1)] call DB_fnc_numberSafe;
 
 diag_log format ["[COMPANY] Employee found: %1, Current bank: $%2", _employeeName, _employeeBank];
 
 // Mettre à jour le compte de l'entreprise
 private _newCompanyBank = _companyBank - _salary;
-_query = format ["UPDATE companies SET bank='%1' WHERE id='%2'", _newCompanyBank, _companyId];
+_query = format ["UPDATE companies SET bank='%1' WHERE id='%2'", [_newCompanyBank] call DB_fnc_numberSafe, _companyId];
+diag_log format ["[COMPANY] Update company bank query: %1", _query];
 [_query, 1] call DB_fnc_asyncCall;
 
 // Mettre à jour le compte de l'employé
 private _newEmployeeBank = _employeeBank + _salary;
-_query = format ["UPDATE players SET bank='%1' WHERE playerid='%2'", _newEmployeeBank, _employeeUID];
+_query = format ["UPDATE players SET bankacc='%1' WHERE pid='%2'", [_newEmployeeBank] call DB_fnc_numberSafe, _employeeUID];
+diag_log format ["[COMPANY] Update player bank query: %1", _query];
 [_query, 1] call DB_fnc_asyncCall;
 
 // Convertir le salaire en chaîne pour le stocker dans le champ 'role'
@@ -61,7 +71,7 @@ diag_log format ["[COMPANY] Salary string: %1", _salaryStr];
 
 // Mettre à jour le rôle/salaire de l'employé
 _query = format ["UPDATE company_employees SET role='%1' WHERE company_id='%2' AND player_uid='%3'", _salaryStr, _companyId, _employeeUID];
-diag_log format ["[COMPANY] Update query: %1", _query];
+diag_log format ["[COMPANY] Update role query: %1", _query];
 [_query, 1] call DB_fnc_asyncCall;
 
 // Enregistrer le paiement dans l'historique
