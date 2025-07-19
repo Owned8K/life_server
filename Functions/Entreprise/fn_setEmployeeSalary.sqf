@@ -29,8 +29,8 @@ if (_companyResult isEqualTo []) exitWith {
     [1, "Erreur: Entreprise non trouvée"] remoteExecCall ["life_fnc_broadcast", owner _owner];
 };
 
-// Convertir le solde en nombre
-private _companyBank = parseNumber ((_companyResult select 0));
+// Le résultat est déjà un nombre, pas besoin de parseNumber
+private _companyBank = _companyResult select 0;
 diag_log format ["[COMPANY] Company bank balance: $%1", _companyBank];
 
 if (_companyBank < _salary) exitWith {
@@ -50,6 +50,7 @@ if (_playerResult isEqualTo []) exitWith {
 };
 
 private _employeeName = _playerResult select 0;
+// Pour le compte bancaire du joueur, on garde parseNumber car il peut être stocké comme une chaîne
 private _employeeBank = parseNumber ((_playerResult select 1));
 
 diag_log format ["[COMPANY] Employee found: %1, Current bank: $%2", _employeeName, _employeeBank];
