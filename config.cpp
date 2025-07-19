@@ -89,6 +89,8 @@ class CfgFunctions {
             class hireEmployee {};
             class fireEmployee {};
             class setEmployeeSalary {};
+            class getPaymentHistory {};
+            class getCompanyEmployees {};
         };
 
         class Housing {
