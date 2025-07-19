@@ -25,9 +25,15 @@ if (_companyId isEqualTo 0 || isNull _player) exitWith {
 // Vérifier si des données existent
 private _countQuery = format ["SELECT COUNT(*) as total FROM company_payments WHERE company_id='%1'", _companyId];
 private _countResult = [_countQuery,2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY] Number of payments found: %1", _countResult];
+diag_log format ["[COMPANY] Raw count result: %1", _countResult];
 
-if ((_countResult select 0) select 0 > 0) then {
+private _count = 0;
+if (!(_countResult isEqualTo [])) then {
+    _count = _countResult select 0;
+    diag_log format ["[COMPANY] Number of payments found: %1", _count];
+};
+
+if (_count > 0) then {
     private _query = format ["SELECT employee_uid, employee_name, amount, DATE_FORMAT(payment_date, '%%Y-%%m-%%d %%H:%%i') as payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
     diag_log format ["[COMPANY] Executing query: %1", _query];
 
