@@ -59,15 +59,23 @@ diag_log format ["[COMPANY FETCH] Employees result: %1", _employees];
 // Formater les données des employés
 private _formattedEmployees = [];
 {
-    _x params [
-        ["_empUID", "", [""]],
-        ["_empName", "", [""]],
-        ["_empRole", "", [""]]
-    ];
-    
-    _formattedEmployees pushBack [_empUID, _empName, 0];
-    diag_log format ["[COMPANY FETCH] Added employee - UID: %1, Name: %2, Role: %3", 
-        _empUID, _empName, _empRole];
+    if (count _x >= 3) then {
+        _x params [
+            ["_empUID", "", [""]],
+            ["_empName", "", [""]],
+            ["_empRole", "", [""]]
+        ];
+        
+        // Extraire le salaire du rôle (format: "salary_X")
+        private _salary = 0;
+        if (_empRole select [0,7] == "salary_") then {
+            _salary = parseNumber (_empRole select [7]);
+        };
+        
+        _formattedEmployees pushBack [_empUID, _empName, _salary];
+        diag_log format ["[COMPANY FETCH] Added employee - UID: %1, Name: %2, Salary: %3", 
+            _empUID, _empName, _salary];
+    };
 } forEach _employees;
 
 private _formattedData = [_companyId, _companyName, _ownerName, _ownerUID, _companyBank, _formattedEmployees];
