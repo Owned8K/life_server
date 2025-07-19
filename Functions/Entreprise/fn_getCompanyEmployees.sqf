@@ -31,24 +31,49 @@ diag_log format ["[COMPANY] Query result: %1", _queryResult];
 
 // Formater les données des employés
 private _formattedEmployees = [];
-{
-    if (count _x >= 3) then {
-        _x params [
-            ["_empUID", "", [""]],
-            ["_empName", "", [""]],
-            ["_empRole", "", [""]]
-        ];
-        
-        // Extraire le salaire du rôle (format: "salary_X")
-        private _salary = 0;
-        if (_empRole select [0,7] == "salary_") then {
-            _salary = parseNumber (_empRole select [7]);
+
+// Vérifier si _queryResult est un tableau de tableaux ou un tableau simple
+if (count _queryResult > 0) then {
+    if (_queryResult select 0 isEqualType []) then {
+        // C'est un tableau de tableaux (plusieurs employés)
+        {
+            if (count _x >= 3) then {
+                _x params [
+                    ["_empUID", "", [""]],
+                    ["_empName", "", [""]],
+                    ["_empRole", "", [""]]
+                ];
+                
+                // Extraire le salaire du rôle (format: "salary_X")
+                private _salary = 0;
+                if (_empRole select [0,7] == "salary_") then {
+                    _salary = parseNumber (_empRole select [7]);
+                };
+                
+                _formattedEmployees pushBack [_empUID, _empName, _salary];
+                diag_log format ["[COMPANY] Formatted employee - UID: %1, Name: %2, Salary: %3", _empUID, _empName, _salary];
+            };
+        } forEach _queryResult;
+    } else {
+        // C'est un tableau simple (un seul employé)
+        if (count _queryResult >= 3) then {
+            _queryResult params [
+                ["_empUID", "", [""]],
+                ["_empName", "", [""]],
+                ["_empRole", "", [""]]
+            ];
+            
+            // Extraire le salaire du rôle (format: "salary_X")
+            private _salary = 0;
+            if (_empRole select [0,7] == "salary_") then {
+                _salary = parseNumber (_empRole select [7]);
+            };
+            
+            _formattedEmployees pushBack [_empUID, _empName, _salary];
+            diag_log format ["[COMPANY] Formatted single employee - UID: %1, Name: %2, Salary: %3", _empUID, _empName, _salary];
         };
-        
-        _formattedEmployees pushBack [_empUID, _empName, _salary];
-        diag_log format ["[COMPANY] Formatted employee - UID: %1, Name: %2, Salary: %3", _empUID, _empName, _salary];
     };
-} forEach _queryResult;
+};
 
 diag_log format ["[COMPANY] Formatted employees: %1", _formattedEmployees];
 

@@ -58,25 +58,53 @@ diag_log format ["[COMPANY FETCH] Employees result: %1", _employees];
 
 // Formater les données des employés
 private _formattedEmployees = [];
-{
-    if (count _x >= 3) then {
-        _x params [
-            ["_empUID", "", [""]],
-            ["_empName", "", [""]],
-            ["_empRole", "", [""]]
-        ];
-        
-        // Extraire le salaire du rôle (format: "salary_X")
-        private _salary = 0;
-        if (_empRole select [0,7] == "salary_") then {
-            _salary = parseNumber (_empRole select [7]);
+
+// Vérifier si _employees est un tableau de tableaux ou un tableau simple
+if (count _employees > 0) then {
+    if (_employees select 0 isEqualType []) then {
+        // C'est un tableau de tableaux (plusieurs employés)
+        {
+            if (count _x >= 3) then {
+                _x params [
+                    ["_empUID", "", [""]],
+                    ["_empName", "", [""]],
+                    ["_empRole", "", [""]]
+                ];
+                
+                // Extraire le salaire du rôle (format: "salary_X")
+                private _salary = 0;
+                if (_empRole select [0,7] == "salary_") then {
+                    _salary = parseNumber (_empRole select [7]);
+                };
+                
+                _formattedEmployees pushBack [_empUID, _empName, _salary];
+                diag_log format ["[COMPANY FETCH] Added employee - UID: %1, Name: %2, Salary: %3", 
+                    _empUID, _empName, _salary];
+            };
+        } forEach _employees;
+    } else {
+        // C'est un tableau simple (un seul employé)
+        if (count _employees >= 3) then {
+            _employees params [
+                ["_empUID", "", [""]],
+                ["_empName", "", [""]],
+                ["_empRole", "", [""]]
+            ];
+            
+            // Extraire le salaire du rôle (format: "salary_X")
+            private _salary = 0;
+            if (_empRole select [0,7] == "salary_") then {
+                _salary = parseNumber (_empRole select [7]);
+            };
+            
+            _formattedEmployees pushBack [_empUID, _empName, _salary];
+            diag_log format ["[COMPANY FETCH] Added single employee - UID: %1, Name: %2, Salary: %3", 
+                _empUID, _empName, _salary];
         };
-        
-        _formattedEmployees pushBack [_empUID, _empName, _salary];
-        diag_log format ["[COMPANY FETCH] Added employee - UID: %1, Name: %2, Salary: %3", 
-            _empUID, _empName, _salary];
     };
-} forEach _employees;
+};
+
+diag_log format ["[COMPANY FETCH] Formatted employees: %1", _formattedEmployees];
 
 private _formattedData = [_companyId, _companyName, _ownerName, _ownerUID, _companyBank, _formattedEmployees];
 diag_log format ["[COMPANY FETCH] Final formatted data: %1", _formattedData];
