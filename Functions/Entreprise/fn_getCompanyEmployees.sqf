@@ -29,6 +29,29 @@ private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[COMPANY] Found %1 employees", count _queryResult];
 diag_log format ["[COMPANY] Query result: %1", _queryResult];
 
+// Formater les données des employés
+private _formattedEmployees = [];
+{
+    if (count _x >= 3) then {
+        _x params [
+            ["_empUID", "", [""]],
+            ["_empName", "", [""]],
+            ["_empRole", "", [""]]
+        ];
+        
+        // Extraire le salaire du rôle (format: "salary_X")
+        private _salary = 0;
+        if (_empRole select [0,7] == "salary_") then {
+            _salary = parseNumber (_empRole select [7]);
+        };
+        
+        _formattedEmployees pushBack [_empUID, _empName, _salary];
+        diag_log format ["[COMPANY] Formatted employee - UID: %1, Name: %2, Salary: %3", _empUID, _empName, _salary];
+    };
+} forEach _queryResult;
+
+diag_log format ["[COMPANY] Formatted employees: %1", _formattedEmployees];
+
 // Envoyer les résultats au client
-[_queryResult] remoteExecCall ["life_fnc_updateEmployeeComboList", owner _owner];
-diag_log format ["[COMPANY] Sent results to client ID: %1", owner _owner]; 
+[_formattedEmployees] remoteExecCall ["life_fnc_updateEmployeeComboList", owner _owner];
+diag_log format ["[COMPANY] Sent formatted results to client ID: %1", owner _owner]; 
