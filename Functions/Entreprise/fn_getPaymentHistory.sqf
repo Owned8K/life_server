@@ -14,22 +14,23 @@ params [
 
 diag_log "=== TON_fnc_getPaymentHistory START ===";
 diag_log format ["Params - CompanyID: %1, Owner: %2", _companyId, _owner];
+diag_log format ["Owner UID: %1", getPlayerUID _owner];
+diag_log format ["Owner ID (netId): %1", owner _owner];
 
 if (_companyId isEqualTo 0 || isNull _owner) exitWith {
     diag_log "GET_PAYMENT_HISTORY: Paramètres invalides";
     diag_log "=== TON_fnc_getPaymentHistory END (Invalid Params) ===";
 };
 
-// Vérifier si la table existe
-private _checkTable = "SHOW TABLES LIKE 'company_payments'";
-private _tableExists = [_checkTable, 2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY] Table check result: %1", _tableExists];
+// Vérifier la structure de la table
+private _describeTable = "DESCRIBE company_payments";
+private _tableStructure = [_describeTable, 2] call DB_fnc_asyncCall;
+diag_log format ["[COMPANY] Table structure: %1", _tableStructure];
 
-if (_tableExists isEqualTo []) then {
-    diag_log "[COMPANY] Table company_payments does not exist, creating it...";
-    private _createTable = "CREATE TABLE IF NOT EXISTS company_payments (id INT AUTO_INCREMENT PRIMARY KEY, company_id INT, player_uid VARCHAR(50), player_name VARCHAR(100), amount INT, payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
-    [_createTable, 1] call DB_fnc_asyncCall;
-};
+// Vérifier si des données existent dans la table
+private _countQuery = format ["SELECT COUNT(*) as count FROM company_payments WHERE company_id='%1'", _companyId];
+private _countResult = [_countQuery, 2] call DB_fnc_asyncCall;
+diag_log format ["[COMPANY] Number of payments in table: %1", _countResult];
 
 // Récupérer l'historique des paiements (les 50 derniers paiements)
 private _query = format ["SELECT player_name, amount, payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
@@ -59,6 +60,7 @@ if (_queryResult isEqualTo []) then {
     } forEach _queryResult;
 
     diag_log format ["[COMPANY] Sending %1 payments to client (Owner ID: %2)", count _formattedPayments, owner _owner];
+    diag_log format ["[COMPANY] Formatted payments data: %1", _formattedPayments];
     [_formattedPayments] remoteExec ["life_fnc_updatePaymentHistoryList", owner _owner];
 };
 
