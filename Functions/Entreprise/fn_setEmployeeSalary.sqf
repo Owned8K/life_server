@@ -4,7 +4,7 @@
     Author: Your Name
     
     Description:
-    Met à jour le rôle (qui servira de salaire) d'un employé dans la table company_employees
+    Met à jour le rôle (qui servira de salaire) d'un employé et enregistre le paiement
 */
 
 params [
@@ -18,11 +18,26 @@ if (_companyId isEqualTo 0 || _employeeUID isEqualTo "" || isNull _owner) exitWi
     diag_log "SET_SALARY: Paramètres invalides";
 };
 
+// Récupérer le nom de l'employé
+private _query = format ["SELECT player_name FROM company_employees WHERE company_id='%1' AND player_uid='%2'", _companyId, _employeeUID];
+private _result = [_query, 2] call DB_fnc_asyncCall;
+
+if (_result isEqualTo []) exitWith {
+    [1, "Employé non trouvé"] remoteExecCall ["life_fnc_broadcast", owner _owner];
+};
+
+private _employeeName = (_result select 0) select 0;
+
 // Convertir le salaire en chaîne pour le stocker dans le champ 'role'
 private _salaryStr = format ["salary_%1", _salary];
 
 // Mettre à jour le rôle/salaire de l'employé
-private _query = format ["UPDATE company_employees SET role='%1' WHERE company_id='%2' AND player_uid='%3'", _salaryStr, _companyId, _employeeUID];
+_query = format ["UPDATE company_employees SET role='%1' WHERE company_id='%2' AND player_uid='%3'", _salaryStr, _companyId, _employeeUID];
+[_query, 1] call DB_fnc_asyncCall;
+
+// Enregistrer le paiement dans l'historique
+_query = format ["INSERT INTO company_payments (company_id, player_uid, player_name, amount) VALUES ('%1', '%2', '%3', '%4')", 
+    _companyId, _employeeUID, _employeeName, _salary];
 [_query, 1] call DB_fnc_asyncCall;
 
 // Notifier le propriétaire
@@ -40,5 +55,6 @@ if !(isNull _employee) then {
     [1, format ["Votre salaire a été fixé à $%1 par %2", [_salary] call life_fnc_numberText, name _owner]] remoteExecCall ["life_fnc_broadcast", owner _employee];
 };
 
-// Mettre à jour la liste des employés pour le propriétaire
-[] remoteExec ["life_fnc_updateEmployeeCombo", owner _owner]; 
+// Mettre à jour les listes
+[] remoteExec ["life_fnc_updateEmployeeCombo", owner _owner];
+[] remoteExec ["life_fnc_updatePaymentHistory", owner _owner]; 
