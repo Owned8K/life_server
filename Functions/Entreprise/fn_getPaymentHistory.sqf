@@ -22,33 +22,34 @@ if (_companyId isEqualTo 0 || isNull _player) exitWith {
     diag_log "=== TON_fnc_getPaymentHistory END ===";
 };
 
-// Vérifier la structure de la table
-private _describeTable = "DESCRIBE company_payments";
-private _tableStructure = [_describeTable,2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY] Table structure: %1", _tableStructure];
-
 // Vérifier si des données existent
-private _countQuery = format ["SELECT COUNT(*) FROM company_payments WHERE company_id='%1'", _companyId];
+private _countQuery = format ["SELECT COUNT(*) as total FROM company_payments WHERE company_id='%1'", _companyId];
 private _countResult = [_countQuery,2] call DB_fnc_asyncCall;
 diag_log format ["[COMPANY] Number of payments found: %1", _countResult];
 
-private _query = format ["SELECT employee_uid, employee_name, amount, DATE_FORMAT(payment_date, '%Y-%m-%d %H:%i') as payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
-diag_log format ["[COMPANY] Executing query: %1", _query];
+if ((_countResult select 0) select 0 > 0) then {
+    private _query = format ["SELECT employee_uid, employee_name, amount, DATE_FORMAT(payment_date, '%%Y-%%m-%%d %%H:%%i') as payment_date FROM company_payments WHERE company_id='%1' ORDER BY payment_date DESC LIMIT 50", _companyId];
+    diag_log format ["[COMPANY] Executing query: %1", _query];
 
-private _queryResult = [_query,2] call DB_fnc_asyncCall;
-diag_log format ["[COMPANY] Query result: %1", _queryResult];
+    private _queryResult = [_query,2] call DB_fnc_asyncCall;
+    diag_log format ["[COMPANY] Query result: %1", _queryResult];
 
-if (_queryResult isEqualTo []) then {
-    diag_log "[COMPANY] No payment history found";
-    _queryResult = [];
+    if (_queryResult isEqualTo []) then {
+        diag_log "[COMPANY] No payment history found";
+        _queryResult = [];
+    } else {
+        diag_log format ["[COMPANY] Found %1 payments", count _queryResult];
+        {
+            diag_log format ["[COMPANY] Processing payment - Employee: %1 (%2), Amount: %3, Date: %4", 
+                _x select 1, _x select 0, _x select 2, _x select 3];
+        } forEach _queryResult;
+    };
+
+    [_queryResult] remoteExecCall ["life_fnc_updatePaymentHistoryList", _player];
+    diag_log format ["[COMPANY] Sent payment history to player: %1", _queryResult];
 } else {
-    diag_log format ["[COMPANY] Found %1 payments", count _queryResult];
-    {
-        diag_log format ["[COMPANY] Processing payment - Employee: %1 (%2), Amount: %3, Date: %4", 
-            _x select 1, _x select 0, _x select 2, _x select 3];
-    } forEach _queryResult;
+    diag_log "[COMPANY] No payments found in database";
+    [[]] remoteExecCall ["life_fnc_updatePaymentHistoryList", _player];
 };
 
-[_queryResult] remoteExecCall ["life_fnc_updatePaymentHistoryList", _player];
-diag_log format ["[COMPANY] Sent payment history to player: %1", _queryResult];
 diag_log "=== TON_fnc_getPaymentHistory END ==="; 
