@@ -183,19 +183,10 @@ publicVariable "TON_fnc_playtime_values_request";
 
 
 /* Setup the federal reserve building(s) */
-private ["_vaultHouse","_altisArray","_tanoaArray","_pos"];
-
-_vaultHouse = switch (worldName) do {
-    case "Altis": {"Land_Research_house_V1_F"};
-    case "Tanoa": {"Land_Medevac_house_V1_F"};
-    default {"Land_Research_house_V1_F"};
-};
-
-_pos = switch (worldName) do {
-    case "Altis": {[16019.5,16952.9,0]};
-    case "Tanoa": {[11074.2,11501.5,0.00137329]};
-    default {[16019.5,16952.9,0]};
-};
+private _vaultHouse = [[["Altis", "Land_Research_house_V1_F"], ["Tanoa", "Land_Medevac_house_V1_F"]]] call TON_fnc_terrainSort;
+private _altisArray = [16019.5,16952.9,0];
+private _tanoaArray = [11074.2,11501.5,0.00137329];
+private _pos = [[["Altis", _altisArray], ["Tanoa", _tanoaArray]]] call TON_fnc_terrainSort;
 
 _dome = nearestObject [_pos,"Land_Dome_Big_F"];
 _rsb = nearestObject [_pos,_vaultHouse];

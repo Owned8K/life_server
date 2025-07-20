@@ -16,15 +16,12 @@ _queryStmt = [_this,0,"",[""]] call BIS_fnc_param;
 _mode = [_this,1,1,[0]] call BIS_fnc_param;
 _multiarr = [_this,2,false,[false]] call BIS_fnc_param;
 
-if (_queryStmt isEqualTo "") exitWith {diag_log "Empty query sent to DB"; []};
-
 _key = EXTDB format ["%1:%2:%3",_mode,FETCH_CONST(life_sql_id),_queryStmt];
 
 if (_mode isEqualTo 1) exitWith {true};
 
 _key = call compile format ["%1",_key];
 _key = (_key select 1);
-_queryResult = "";
 _queryResult = EXTDB format ["4:%1", _key];
 
 //Make sure the data is received
@@ -47,14 +44,8 @@ if (_queryResult isEqualTo "[5]") then {
     if (!_loop) exitWith {};
     };
 };
-
-if (_queryResult isEqualTo "") exitWith {diag_log "Empty result from DB"; []};
-
 _queryResult = call compile _queryResult;
-
-if (isNil "_queryResult") exitWith {diag_log "Result from DB is nil"; []};
 if ((_queryResult select 0) isEqualTo 0) exitWith {diag_log format ["extDB3: Protocol Error: %1", _queryResult]; []};
-
 _return = (_queryResult select 1);
 if (!_multiarr && count _return > 0) then {
     _return = (_return select 0);
