@@ -26,4 +26,7 @@ private _query = format ["INSERT INTO contacts (owner_pid, contact_name, contact
 diag_log format ["[SMARTPHONE][SERVER] Requête SQL: %1", _query];
 
 [_query, 1] call DB_fnc_asyncCall;
-diag_log "=== FIN fn_server_addContact.sqf ==="; 
+diag_log "=== FIN fn_server_addContact.sqf ===";
+
+// Notifie le client et rafraîchit sa liste
+[true] remoteExecCall ["life_fnc_contactAdded", _player]; 
