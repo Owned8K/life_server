@@ -203,6 +203,8 @@ diag_log "----------------------------------------------------------------------
 diag_log "---------------------------------- Initializing Server Functions -----------------------------------";
 life_fnc_server_fetchContacts = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchContacts.sqf";
 publicVariable "life_fnc_server_fetchContacts";
+life_fnc_server_fetchMessages = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchMessages.sqf";
+publicVariable "life_fnc_server_fetchMessages";
 diag_log "---------------------------------- Server Functions Initialized -----------------------------------";
 diag_log "----------------------------------------------------------------------------------------------------";
 

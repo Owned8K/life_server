@@ -14,6 +14,16 @@ if (isNull _player) exitWith {
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
 
+// Vérifie d'abord le nombre total de contacts
+private _countQuery = format ["SELECT COUNT(*) FROM contacts WHERE owner_pid='%1'", _pid];
+private _countResult = [_countQuery, 2] call DB_fnc_asyncCall;
+diag_log format ["[CONTACTS][SERVER] Nombre total de contacts dans la base: %1", _countResult];
+
+// Affiche tous les contacts pour debug
+private _allContactsQuery = format ["SELECT * FROM contacts WHERE owner_pid='%1'", _pid];
+private _allContacts = [_allContactsQuery, 2] call DB_fnc_asyncCall;
+diag_log format ["[CONTACTS][SERVER] Tous les contacts bruts: %1", _allContacts];
+
 private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1' ORDER BY contact_name ASC", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
