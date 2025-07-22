@@ -26,16 +26,16 @@ if (!(_queryResult isEqualTo [])) then {
     // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
     if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
         private _id = _queryResult select 0;
-        private _name = toString(toArray(_queryResult select 1));  // Nettoie les guillemets
-        private _number = toString(toArray(_queryResult select 2)); // Nettoie les guillemets
+        private _name = parseSimpleArray format ["[""%1""]", _queryResult select 1] select 0;
+        private _number = parseSimpleArray format ["[""%1""]", _queryResult select 2] select 0;
         _contacts = [[_id, _name, _number]];
         diag_log "[CONTACTS][SERVER] Contact unique détecté et nettoyé";
     } else {
         {
             if (_x isEqualType [] && {count _x == 3}) then {
                 private _id = _x select 0;
-                private _name = toString(toArray(_x select 1));
-                private _number = toString(toArray(_x select 2));
+                private _name = parseSimpleArray format ["[""%1""]", _x select 1] select 0;
+                private _number = parseSimpleArray format ["[""%1""]", _x select 2] select 0;
                 _contacts pushBack [_id, _name, _number];
             };
         } forEach _queryResult;
