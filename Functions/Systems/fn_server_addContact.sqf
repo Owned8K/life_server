@@ -9,6 +9,8 @@ params [
     ["_number", "", [""]]
 ];
 
+diag_log "[SMARTPHONE][SERVER] fn_server_addContact.sqf appelé";
+
 private _pid = getPlayerUID _player;
 if (_pid isEqualTo "" || _name isEqualTo "" || _number isEqualTo "") exitWith {};
 

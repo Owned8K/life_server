@@ -317,3 +317,6 @@ compileFinal "
     };
 ";
 publicVariable "TON_fnc_clientMessage";
+
+life_fnc_server_addContact = compileFinal preprocessFileLineNumbers "Functions/Systems/fn_server_addContact.sqf";
+publicVariable "life_fnc_server_addContact";
