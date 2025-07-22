@@ -20,32 +20,27 @@ diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
 
-// Fonction pour nettoyer une chaîne
-private _cleanString = {
-    params ["_str"];
-    private _array = toArray _str;
-    toString _array
-};
-
 // Traitement du résultat
 private _contacts = [];
 if (!(_queryResult isEqualTo [])) then {
     // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
     if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
-        private _id = _queryResult select 0;
-        private _name = [_queryResult select 1] call _cleanString;
-        private _number = [_queryResult select 2] call _cleanString;
+        _queryResult params [
+            ["_id", 0, [0]],
+            ["_name", "", [""]],
+            ["_number", "", [""]]
+        ];
         _contacts = [[_id, _name, _number]];
         diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _name, _number];
     } else {
         {
-            if (_x isEqualType [] && {count _x == 3}) then {
-                private _id = _x select 0;
-                private _name = [_x select 1] call _cleanString;
-                private _number = [_x select 2] call _cleanString;
-                _contacts pushBack [_id, _name, _number];
-                diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
-            };
+            _x params [
+                ["_id", 0, [0]],
+                ["_name", "", [""]],
+                ["_number", "", [""]]
+            ];
+            _contacts pushBack [_id, _name, _number];
+            diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
         } forEach _queryResult;
     };
 };
