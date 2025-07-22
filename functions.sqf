@@ -322,3 +322,8 @@ diag_log "[SMARTPHONE][SERVER] Compilation de fn_server_addContact.sqf...";
 life_fnc_server_addContact = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_addContact.sqf";
 publicVariable "life_fnc_server_addContact";
 diag_log "[SMARTPHONE][SERVER] Compilation terminée et fonction publiée.";
+
+diag_log "[MESSAGES][SERVER] Compilation de fn_server_fetchMessages.sqf...";
+life_fnc_server_fetchMessages = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchMessages.sqf";
+publicVariable "life_fnc_server_fetchMessages";
+diag_log "[MESSAGES][SERVER] Compilation terminée et fonction publiée.";

@@ -13,43 +13,45 @@ if (isNull _player) exitWith {
 
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
-diag_log format ["[CONTACTS][SERVER] Objet joueur: %1", _player];
-diag_log format ["[CONTACTS][SERVER] Nom joueur: %1", name _player];
 
 private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1' ORDER BY contact_name ASC", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
+diag_log format ["[CONTACTS][SERVER] Type du résultat: %1", typeName _queryResult];
+diag_log format ["[CONTACTS][SERVER] Nombre d'éléments: %1", count _queryResult];
 
 // Traitement du résultat
 private _contacts = [];
 if (!(_queryResult isEqualTo [])) then {
-    // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
-    if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
+    // Vérifie si c'est un tableau de tableaux (plusieurs contacts) ou un tableau simple (un seul contact)
+    if ((_queryResult select 0) isEqualType []) then {
+        diag_log "[CONTACTS][SERVER] Traitement de plusieurs contacts";
+        {
+            _x params [
+                ["_id", 0, [0]],
+                ["_name", "", [""]],
+                ["_number", "", [""]]
+            ];
+            _contacts pushBack [_id, _name, _number];
+            diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
+        } forEach _queryResult;
+    } else {
+        // Un seul contact
+        diag_log "[CONTACTS][SERVER] Traitement d'un contact unique";
         _queryResult params [
             ["_id", 0, [0]],
             ["_name", "", [""]],
             ["_number", "", [""]]
         ];
         _contacts = [[_id, _name, _number]];
-        diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _name, _number];
-    } else {
-        {
-            if (_x isEqualType [] && {count _x == 3}) then {
-                _x params [
-                    ["_id", 0, [0]],
-                    ["_name", "", [""]],
-                    ["_number", "", [""]]
-                ];
-                _contacts pushBack [_id, _name, _number];
-                diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
-            };
-        } forEach _queryResult;
+        diag_log format ["[CONTACTS][SERVER] Contact unique ajouté: [%1, %2, %3]", _id, _name, _number];
     };
 };
 
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client %2 (%3)", count _contacts, name _player, _pid];
+diag_log format ["[CONTACTS][SERVER] Contacts finaux: %1", _contacts];
+diag_log format ["[CONTACTS][SERVER] Nombre total de contacts: %1", count _contacts];
 
 // Envoie les contacts au client
 [_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
