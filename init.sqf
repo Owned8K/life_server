@@ -198,6 +198,14 @@ _rsb setVariable ["bis_disabled_Door_1",1,true];
 _dome allowDamage false;
 _rsb allowDamage false;
 
+/* Initialize Server Functions */
+diag_log "----------------------------------------------------------------------------------------------------";
+diag_log "---------------------------------- Initializing Server Functions -----------------------------------";
+life_fnc_server_fetchContacts = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchContacts.sqf";
+publicVariable "life_fnc_server_fetchContacts";
+diag_log "---------------------------------- Server Functions Initialized -----------------------------------";
+diag_log "----------------------------------------------------------------------------------------------------";
+
 /* Tell clients that the server is ready and is accepting queries */
 life_server_isReady = true;
 publicVariable "life_server_isReady";
