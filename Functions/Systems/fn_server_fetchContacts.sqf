@@ -14,7 +14,8 @@ if (isNull _player) exitWith {
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
 
-private _query = format ["SELECT id, CONCAT('''', TRIM(BOTH '""' FROM contact_name), '''') as contact_name, CONCAT('''', TRIM(BOTH '""' FROM contact_number), '''') as contact_number FROM contacts WHERE owner_pid='%1'", _pid];
+// On enlève tous les guillemets dans la requête SQL
+private _query = format ["SELECT id, REPLACE(REPLACE(contact_name, '""', ''), '''', '') as contact_name, REPLACE(REPLACE(contact_number, '""', ''), '''', '') as contact_number FROM contacts WHERE owner_pid='%1'", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
@@ -43,10 +44,17 @@ if (!(_queryResult isEqualTo [])) then {
     };
 };
 
-diag_log format ["[CONTACTS][SERVER] Contacts formatés: %1", _contacts];
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _contacts];
+// Nettoyage final des données avant envoi
+private _cleanContacts = [];
+{
+    _x params ["_id", "_name", "_number"];
+    _cleanContacts pushBack [_id, format ["%1", _name], format ["%1", _number]];
+} forEach _contacts;
+
+diag_log format ["[CONTACTS][SERVER] Contacts nettoyés: %1", _cleanContacts];
+diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _cleanContacts];
 
 // Envoie les contacts au client
-[_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
+[_cleanContacts] remoteExecCall ["life_fnc_receiveContacts", _player];
 
 diag_log "=== FIN fn_server_fetchContacts.sqf ==="; 
