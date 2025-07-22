@@ -14,7 +14,7 @@ if (isNull _player) exitWith {
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
 
-private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1'", _pid];
+private _query = format ["SELECT id, REPLACE(REPLACE(contact_name, '""', ''), '\""', '') as contact_name, REPLACE(REPLACE(contact_number, '""', ''), '\""', '') as contact_number FROM contacts WHERE owner_pid='%1'", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
@@ -25,21 +25,15 @@ private _contacts = [];
 if (!(_queryResult isEqualTo [])) then {
     // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
     if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
-        private _id = _queryResult select 0;
-        private _name = parseSimpleArray format ["[""%1""]", _queryResult select 1] select 0;
-        private _number = parseSimpleArray format ["[""%1""]", _queryResult select 2] select 0;
-        _contacts = [[_id, _name, _number]];
-        diag_log "[CONTACTS][SERVER] Contact unique détecté et nettoyé";
+        _contacts = [_queryResult];
+        diag_log "[CONTACTS][SERVER] Contact unique détecté";
     } else {
         {
             if (_x isEqualType [] && {count _x == 3}) then {
-                private _id = _x select 0;
-                private _name = parseSimpleArray format ["[""%1""]", _x select 1] select 0;
-                private _number = parseSimpleArray format ["[""%1""]", _x select 2] select 0;
-                _contacts pushBack [_id, _name, _number];
+                _contacts pushBack _x;
             };
         } forEach _queryResult;
-        diag_log "[CONTACTS][SERVER] Liste de contacts nettoyée";
+        diag_log "[CONTACTS][SERVER] Liste de contacts récupérée";
     };
 };
 
