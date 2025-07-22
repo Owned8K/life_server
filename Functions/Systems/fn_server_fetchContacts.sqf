@@ -21,21 +21,32 @@ private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
 
 // Traitement du résultat
-if (_queryResult isEqualTo []) then {
-    diag_log "[CONTACTS][SERVER] Aucun contact trouvé";
-    _queryResult = [];
-} else {
-    // Si on reçoit un seul résultat, on le met dans un tableau
-    if ((_queryResult select 0) isEqualType "") then {
-        _queryResult = [_queryResult];
-        diag_log "[CONTACTS][SERVER] Contact unique converti en tableau";
+private _contacts = [];
+if (!(_queryResult isEqualTo [])) then {
+    // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
+    if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
+        // Nettoie les guillemets échappés
+        private _cleanName = (_queryResult select 1) call DB_fnc_mresString;
+        private _cleanNumber = (_queryResult select 2) call DB_fnc_mresString;
+        _contacts = [[_queryResult select 0, _cleanName, _cleanNumber]];
+        diag_log "[CONTACTS][SERVER] Contact unique détecté et nettoyé";
+    } else {
+        // Pour une liste de contacts
+        {
+            if (_x isEqualType [] && {count _x == 3}) then {
+                private _cleanName = (_x select 1) call DB_fnc_mresString;
+                private _cleanNumber = (_x select 2) call DB_fnc_mresString;
+                _contacts pushBack [_x select 0, _cleanName, _cleanNumber];
+            };
+        } forEach _queryResult;
+        diag_log "[CONTACTS][SERVER] Liste de contacts nettoyée";
     };
 };
 
-diag_log format ["[CONTACTS][SERVER] Contacts formatés: %1", _queryResult];
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _queryResult];
+diag_log format ["[CONTACTS][SERVER] Contacts formatés: %1", _contacts];
+diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _contacts];
 
 // Envoie les contacts au client
-[_queryResult] remoteExecCall ["life_fnc_receiveContacts", _player];
+[_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
 
 diag_log "=== FIN fn_server_fetchContacts.sqf ==="; 
