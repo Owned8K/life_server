@@ -16,7 +16,7 @@ diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", 
 diag_log format ["[CONTACTS][SERVER] Objet joueur: %1", _player];
 diag_log format ["[CONTACTS][SERVER] Nom joueur: %1", name _player];
 
-private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1'", _pid];
+private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1' ORDER BY contact_name ASC", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
@@ -36,19 +36,20 @@ if (!(_queryResult isEqualTo [])) then {
         diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _name, _number];
     } else {
         {
-            _x params [
-                ["_id", 0, [0]],
-                ["_name", "", [""]],
-                ["_number", "", [""]]
-            ];
-            _contacts pushBack [_id, _name, _number];
-            diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
+            if (_x isEqualType [] && {count _x == 3}) then {
+                _x params [
+                    ["_id", 0, [0]],
+                    ["_name", "", [""]],
+                    ["_number", "", [""]]
+                ];
+                _contacts pushBack [_id, _name, _number];
+                diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
+            };
         } forEach _queryResult;
     };
 };
 
 diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client %2 (%3)", count _contacts, name _player, _pid];
-diag_log format ["[CONTACTS][SERVER] Données envoyées: %1", _contacts];
 
 // Envoie les contacts au client
 [_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
