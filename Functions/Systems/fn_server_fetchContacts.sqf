@@ -14,12 +14,18 @@ if (isNull _player) exitWith {
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
 
-// On enlève tous les guillemets dans la requête SQL
-private _query = format ["SELECT id, REPLACE(REPLACE(contact_name, '""', ''), '''', '') as contact_name, REPLACE(REPLACE(contact_number, '""', ''), '''', '') as contact_number FROM contacts WHERE owner_pid='%1'", _pid];
+private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1'", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
+
+// Fonction pour nettoyer une chaîne
+private _cleanString = {
+    params ["_str"];
+    private _array = toArray _str;
+    toString _array
+};
 
 // Traitement du résultat
 private _contacts = [];
@@ -27,16 +33,16 @@ if (!(_queryResult isEqualTo [])) then {
     // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
     if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
         private _id = _queryResult select 0;
-        private _name = _queryResult select 1;
-        private _number = _queryResult select 2;
+        private _name = [_queryResult select 1] call _cleanString;
+        private _number = [_queryResult select 2] call _cleanString;
         _contacts = [[_id, _name, _number]];
         diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _name, _number];
     } else {
         {
             if (_x isEqualType [] && {count _x == 3}) then {
                 private _id = _x select 0;
-                private _name = _x select 1;
-                private _number = _x select 2;
+                private _name = [_x select 1] call _cleanString;
+                private _number = [_x select 2] call _cleanString;
                 _contacts pushBack [_id, _name, _number];
                 diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
             };
@@ -44,17 +50,10 @@ if (!(_queryResult isEqualTo [])) then {
     };
 };
 
-// Nettoyage final des données avant envoi
-private _cleanContacts = [];
-{
-    _x params ["_id", "_name", "_number"];
-    _cleanContacts pushBack [_id, format ["%1", _name], format ["%1", _number]];
-} forEach _contacts;
-
-diag_log format ["[CONTACTS][SERVER] Contacts nettoyés: %1", _cleanContacts];
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _cleanContacts];
+diag_log format ["[CONTACTS][SERVER] Contacts nettoyés: %1", _contacts];
+diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _contacts];
 
 // Envoie les contacts au client
-[_cleanContacts] remoteExecCall ["life_fnc_receiveContacts", _player];
+[_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
 
 diag_log "=== FIN fn_server_fetchContacts.sqf ==="; 
