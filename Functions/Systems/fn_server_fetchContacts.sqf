@@ -25,17 +25,17 @@ private _contacts = [];
 if (!(_queryResult isEqualTo [])) then {
     // Si le résultat est un contact unique (tableau avec 3 éléments: id, name, number)
     if (count _queryResult == 3 && (_queryResult select 1) isEqualType "") then {
-        // Nettoie les guillemets échappés
-        private _cleanName = (_queryResult select 1) call DB_fnc_mresString;
-        private _cleanNumber = (_queryResult select 2) call DB_fnc_mresString;
+        // Nettoie les guillemets
+        private _cleanName = call compile format ["%1", _queryResult select 1];
+        private _cleanNumber = call compile format ["%1", _queryResult select 2];
         _contacts = [[_queryResult select 0, _cleanName, _cleanNumber]];
         diag_log "[CONTACTS][SERVER] Contact unique détecté et nettoyé";
     } else {
         // Pour une liste de contacts
         {
             if (_x isEqualType [] && {count _x == 3}) then {
-                private _cleanName = (_x select 1) call DB_fnc_mresString;
-                private _cleanNumber = (_x select 2) call DB_fnc_mresString;
+                private _cleanName = call compile format ["%1", _x select 1];
+                private _cleanNumber = call compile format ["%1", _x select 2];
                 _contacts pushBack [_x select 0, _cleanName, _cleanNumber];
             };
         } forEach _queryResult;
