@@ -20,14 +20,23 @@ diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
 
-// Vérifie si le résultat est un tableau
-if (!(_queryResult isEqualType [])) then {
-    diag_log "[CONTACTS][SERVER] ERREUR: Résultat n'est pas un tableau";
-    _queryResult = [];
+// Assure-toi que le résultat est un tableau de contacts
+private _contacts = [];
+if (_queryResult isEqualType []) then {
+    if (count _queryResult > 0) then {
+        // Si c'est un seul contact, mets-le dans un tableau
+        if ((_queryResult select 0) isEqualType "") then {
+            _contacts pushBack _queryResult;
+        } else {
+            _contacts = _queryResult;
+        };
+    };
 };
 
+diag_log format ["[CONTACTS][SERVER] Contacts formatés: %1", _contacts];
+diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _contacts];
+
 // Envoie les contacts au client
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _queryResult];
-[_queryResult] remoteExecCall ["life_fnc_receiveContacts", _player];
+[_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
 
 diag_log "=== FIN fn_server_fetchContacts.sqf ==="; 
