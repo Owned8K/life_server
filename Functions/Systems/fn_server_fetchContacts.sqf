@@ -20,6 +20,19 @@ diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
 private _queryResult = [_query, 2] call DB_fnc_asyncCall;
 diag_log format ["[CONTACTS][SERVER] Résultat brut: %1", _queryResult];
 
+// Fonction pour nettoyer une chaîne
+private _cleanString = {
+    params ["_str"];
+    if (_str isEqualType "") then {
+        private _clean = toString(toArray(_str));
+        diag_log format ["[CONTACTS][SERVER] Nettoyage: '%1' -> '%2'", _str, _clean];
+        _clean
+    } else {
+        diag_log format ["[CONTACTS][SERVER] ERREUR: Type invalide pour nettoyage: %1", typeName _str];
+        ""
+    };
+};
+
 // Traitement du résultat
 private _contacts = [];
 if (!(_queryResult isEqualTo [])) then {
@@ -30,8 +43,10 @@ if (!(_queryResult isEqualTo [])) then {
             ["_name", "", [""]],
             ["_number", "", [""]]
         ];
-        _contacts = [[_id, _name, _number]];
-        diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _name, _number];
+        private _cleanName = [_name] call _cleanString;
+        private _cleanNumber = [_number] call _cleanString;
+        _contacts = [[_id, _cleanName, _cleanNumber]];
+        diag_log format ["[CONTACTS][SERVER] Contact unique détecté: [%1, %2, %3]", _id, _cleanName, _cleanNumber];
     } else {
         {
             _x params [
@@ -39,8 +54,10 @@ if (!(_queryResult isEqualTo [])) then {
                 ["_name", "", [""]],
                 ["_number", "", [""]]
             ];
-            _contacts pushBack [_id, _name, _number];
-            diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _name, _number];
+            private _cleanName = [_name] call _cleanString;
+            private _cleanNumber = [_number] call _cleanString;
+            _contacts pushBack [_id, _cleanName, _cleanNumber];
+            diag_log format ["[CONTACTS][SERVER] Contact ajouté: [%1, %2, %3]", _id, _cleanName, _cleanNumber];
         } forEach _queryResult;
     };
 };

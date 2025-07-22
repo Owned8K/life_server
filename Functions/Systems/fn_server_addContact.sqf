@@ -22,7 +22,15 @@ if (_pid isEqualTo "" || _name isEqualTo "" || _number isEqualTo "") exitWith {
 
 diag_log format ["[SMARTPHONE][SERVER] PID obtenu: %1", _pid];
 
-private _query = format ["INSERT INTO contacts (owner_pid, contact_name, contact_number) VALUES('%1', '%2', '%3')", _pid, [_name] call DB_fnc_mresString, [_number] call DB_fnc_mresString];
+// Nettoyer les chaînes avant insertion
+private _cleanName = toString(toArray(_name));
+private _cleanNumber = toString(toArray(_number));
+
+private _query = format ["INSERT INTO contacts (owner_pid, contact_name, contact_number) VALUES('%1', '%2', '%3')", 
+    _pid, 
+    _cleanName,
+    _cleanNumber
+];
 diag_log format ["[SMARTPHONE][SERVER] Requête SQL: %1", _query];
 
 [_query, 1] call DB_fnc_asyncCall;
