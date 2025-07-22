@@ -13,6 +13,8 @@ if (isNull _player) exitWith {
 
 private _pid = getPlayerUID _player;
 diag_log format ["[CONTACTS][SERVER] Récupération des contacts pour PID: %1", _pid];
+diag_log format ["[CONTACTS][SERVER] Objet joueur: %1", _player];
+diag_log format ["[CONTACTS][SERVER] Nom joueur: %1", name _player];
 
 private _query = format ["SELECT id, contact_name, contact_number FROM contacts WHERE owner_pid='%1'", _pid];
 diag_log format ["[CONTACTS][SERVER] Query: %1", _query];
@@ -45,9 +47,11 @@ if (!(_queryResult isEqualTo [])) then {
     };
 };
 
-diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client", count _contacts];
+diag_log format ["[CONTACTS][SERVER] Envoi de %1 contacts au client %2 (%3)", count _contacts, name _player, _pid];
+diag_log format ["[CONTACTS][SERVER] Données envoyées: %1", _contacts];
 
 // Envoie les contacts au client
 [_contacts] remoteExecCall ["life_fnc_receiveContacts", _player];
+diag_log format ["[CONTACTS][SERVER] RemoteExecCall effectué vers %1", _player];
 
 diag_log "=== FIN fn_server_fetchContacts.sqf ==="; 
