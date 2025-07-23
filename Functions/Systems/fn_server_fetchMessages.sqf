@@ -14,7 +14,7 @@ if (isNull _player) exitWith {
 private _pid = getPlayerUID _player;
 diag_log format ["[MESSAGES][SERVER] Récupération des messages pour PID: %1", _pid];
 
-// Récupère les messages reçus et envoyés avec CAST pour la date
+// Récupère les messages reçus et envoyés
 private _query = format ["SELECT 
     m.id, 
     m.sender_pid, 
@@ -22,7 +22,7 @@ private _query = format ["SELECT
     m.receiver_pid, 
     COALESCE(p2.name, 'Inconnu') as receiver_name, 
     m.content, 
-    CAST(m.sent_at AS CHAR) as sent_at,
+    DATE_FORMAT(m.sent_at, '%%Y-%%m-%%d %%H:%%i:%%s') as sent_at,
     m.is_read 
 FROM messages m 
 LEFT JOIN players p1 ON m.sender_pid = p1.pid 
