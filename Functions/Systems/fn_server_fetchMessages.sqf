@@ -26,7 +26,7 @@ private _query = format ["SELECT
     COALESCE(p1.name, 'Inconnu') as sender_name, 
     m.receiver_pid, 
     COALESCE(p2.name, 'Inconnu') as receiver_name, 
-    REPLACE(REPLACE(m.content, '\', '\\\\'), '''', '\\''') as content,
+    m.content,
     DATE_FORMAT(m.sent_at, '%%Y-%%m-%%d %%H:%%i:%%s') as sent_at,
     m.is_read 
 FROM messages m 
@@ -60,6 +60,7 @@ if (_queryResult isEqualType []) then {
         // Nettoyage des données
         _senderName = if (_senderName == "") then {"Inconnu"} else {_senderName};
         _receiverName = if (_receiverName == "") then {"Inconnu"} else {_receiverName};
+        _content = [_content] call DB_fnc_mresString;
         
         _messages pushBack [_id, _senderPid, _senderName, _receiverPid, _receiverName, _content, _sentAt, _isRead];
         diag_log format ["[MESSAGES][SERVER] Message ajouté: [ID: %1, De: %2, À: %3, Date: %4, Contenu: %5]", 
