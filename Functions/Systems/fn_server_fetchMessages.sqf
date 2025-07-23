@@ -26,43 +26,25 @@ private _query = format ["SELECT m.id, m.sender_pid, p1.name as sender_name, m.r
 
 diag_log format ["[MESSAGES][SERVER] Query: %1", _query];
 
-private _queryResult = [_query, 2] call DB_fnc_asyncCall;
+private _queryResult = [_query, 2, true] call DB_fnc_asyncCall;
 diag_log format ["[MESSAGES][SERVER] Résultat brut: %1", _queryResult];
 
 // Traitement du résultat
 private _messages = [];
-if (!(_queryResult isEqualTo [])) then {
-    // Si le résultat est un message unique
-    if (count _queryResult == 8 && (_queryResult select 5) isEqualType "") then {
-        _queryResult params [
-            ["_id", 0, [0]],
-            ["_senderPid", "", [""]],
-            ["_senderName", "", [""]],
-            ["_receiverPid", "", [""]],
-            ["_receiverName", "", [""]],
-            ["_content", "", [""]],
-            ["_sentAt", "", [""]],
-            ["_isRead", 0, [0]]
-        ];
-        _messages = [[_id, _senderPid, _senderName, _receiverPid, _receiverName, _content, _sentAt, _isRead]];
-        diag_log format ["[MESSAGES][SERVER] Message unique détecté: [ID: %1, De: %2, À: %3, Date: %4]", _id, _senderName, _receiverName, _sentAt];
-    } else {
-        {
-            _x params [
-                ["_id", 0, [0]],
-                ["_senderPid", "", [""]],
-                ["_senderName", "", [""]],
-                ["_receiverPid", "", [""]],
-                ["_receiverName", "", [""]],
-                ["_content", "", [""]],
-                ["_sentAt", "", [""]],
-                ["_isRead", 0, [0]]
-            ];
-            _messages pushBack [_id, _senderPid, _senderName, _receiverPid, _receiverName, _content, _sentAt, _isRead];
-            diag_log format ["[MESSAGES][SERVER] Message ajouté: [ID: %1, De: %2, À: %3, Date: %4]", _id, _senderName, _receiverName, _sentAt];
-        } forEach _queryResult;
-    };
-};
+{
+    _x params [
+        ["_id", 0, [0]],
+        ["_senderPid", "", [""]],
+        ["_senderName", "", [""]],
+        ["_receiverPid", "", [""]],
+        ["_receiverName", "", [""]],
+        ["_content", "", [""]],
+        ["_sentAt", "", [""]],
+        ["_isRead", 0, [0]]
+    ];
+    _messages pushBack [_id, _senderPid, _senderName, _receiverPid, _receiverName, _content, _sentAt, _isRead];
+    diag_log format ["[MESSAGES][SERVER] Message ajouté: [ID: %1, De: %2, À: %3, Date: %4]", _id, _senderName, _receiverName, _sentAt];
+} forEach _queryResult;
 
 diag_log format ["[MESSAGES][SERVER] Envoi de %1 messages au client %2 (%3)", count _messages, name _player, _pid];
 
