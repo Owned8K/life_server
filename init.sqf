@@ -146,6 +146,13 @@ fed_bank setVariable ["safe",count playableUnits,true];
 addMissionEventHandler ["HandleDisconnect",{_this call TON_fnc_clientDisconnect; false;}];
 [] call compile preprocessFileLineNumbers "\life_server\functions.sqf";
 
+/* Initialize distributeurs automatiques */
+diag_log "[SERVEUR] Lancement de l'initialisation des distributeurs...";
+[] spawn {
+    sleep 2; // Attendre un peu que tout soit prêt
+    [] call TON_fnc_server_spawnDistributeurs;
+};
+
 /* Set OwnerID players for Headless Client */
 TON_fnc_requestClientID =
 {
@@ -188,15 +195,20 @@ private _altisArray = [16019.5,16952.9,0];
 private _tanoaArray = [11074.2,11501.5,0.00137329];
 private _pos = [[["Altis", _altisArray], ["Tanoa", _tanoaArray]]] call TON_fnc_terrainSort;
 
-_dome = nearestObject [_pos,"Land_Dome_Big_F"];
-_rsb = nearestObject [_pos,_vaultHouse];
+// Vérifier que _pos est valide avant d'utiliser nearestObject
+if (count _pos == 3 && {_pos select 0 != 0 || _pos select 1 != 0}) then {
+    _dome = nearestObject [_pos,"Land_Dome_Big_F"];
+    _rsb = nearestObject [_pos,_vaultHouse];
 
-for "_i" from 1 to 3 do {_dome setVariable [format ["bis_disabled_Door_%1",_i],1,true]; _dome animateSource [format ["Door_%1_source", _i], 0];};
-_dome setVariable ["locked",true,true];
-_rsb setVariable ["locked",true,true];
-_rsb setVariable ["bis_disabled_Door_1",1,true];
-_dome allowDamage false;
-_rsb allowDamage false;
+    for "_i" from 1 to 3 do {_dome setVariable [format ["bis_disabled_Door_%1",_i],1,true]; _dome animateSource [format ["Door_%1_source", _i], 0];};
+    _dome setVariable ["locked",true,true];
+    _rsb setVariable ["locked",true,true];
+    _rsb setVariable ["bis_disabled_Door_1",1,true];
+    _dome allowDamage false;
+    _rsb allowDamage false;
+} else {
+    diag_log "[SERVEUR] ERREUR: Position fédérale invalide, impossible de configurer la banque fédérale";
+};
 
 /* Initialize Server Functions */
 diag_log "----------------------------------------------------------------------------------------------------";
@@ -217,6 +229,7 @@ aiSpawn = ["hunting_zone",30] spawn TON_fnc_huntingZone;
 
 server_corpses = [];
 addMissionEventHandler ["EntityRespawned", {_this call TON_fnc_entityRespawned}];
+
 
 diag_log "----------------------------------------------------------------------------------------------------";
 diag_log format ["               End of Altis Life Server Init :: Total Execution Time %1 seconds ",(diag_tickTime) - _timeStamp];

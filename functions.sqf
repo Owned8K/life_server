@@ -327,3 +327,25 @@ diag_log "[MESSAGES][SERVER] Compilation de fn_server_fetchMessages.sqf...";
 life_fnc_server_fetchMessages = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchMessages.sqf";
 publicVariable "life_fnc_server_fetchMessages";
 diag_log "[MESSAGES][SERVER] Compilation terminée et fonction publiée.";
+
+
+
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_fetchDistributeurs.sqf...";
+TON_fnc_server_fetchDistributeurs = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_fetchDistributeurs.sqf";
+publicVariable "TON_fnc_server_fetchDistributeurs";
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_fetchDistributeurs terminée et fonction publiée.";
+
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_sendDistributeursToClient.sqf...";
+TON_fnc_server_sendDistributeursToClient = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_sendDistributeursToClient.sqf";
+publicVariable "TON_fnc_server_sendDistributeursToClient";
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_sendDistributeursToClient terminée et fonction publiée.";
+
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_spawnDistributeurs.sqf...";
+TON_fnc_server_spawnDistributeurs = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_spawnDistributeurs.sqf";
+publicVariable "TON_fnc_server_spawnDistributeurs";
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_spawnDistributeurs terminée et fonction publiée.";
+
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_buyDistributeurItem.sqf...";
+TON_fnc_server_buyDistributeurItem = compileFinal preprocessFileLineNumbers "\life_server\Functions\Systems\fn_server_buyDistributeurItem.sqf";
+publicVariable "TON_fnc_server_buyDistributeurItem";
+diag_log "[DISTRIBUTEUR][SERVER] Compilation de fn_server_buyDistributeurItem.sqf terminée et fonction publiée.";
